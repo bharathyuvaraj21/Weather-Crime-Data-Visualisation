@@ -99,32 +99,32 @@ Wind speed and visibility
 Calculated summary statistics and correlation metrics.
 
 ### Step 5: Visualization and Insights
-Time Series Plots: Crime frequency over time, layered with temperature or precipitation levels.
+- Time Series Plots: Crime frequency over time, layered with temperature or precipitation levels.
 
-Bar Charts: Comparison of crime types under different weather conditions.
+- Bar Charts: Comparison of crime types under different weather conditions.
 
-Interactive Maps (Leaflet): Geographic distribution of crimes across regions.
+- Interactive Maps (Leaflet): Geographic distribution of crimes across regions.
 
-Interactive Charts (Plotly): Dynamic visual exploration of trends.
+- Interactive Charts (Plotly): Dynamic visual exploration of trends.
 
 ##  📊 Key Visualizations
-Temperature vs. Crime Frequency
+- Temperature vs. Crime Frequency
 
 Displays the relationship between daily temperature and number of reported crimes.
 
-Humidity & Precipitation Analysis
+- Humidity & Precipitation Analysis
 
 Shows how moisture or rainfall might coincide with fluctuations in crime rates.
 
-Interactive Crime Density Map
+- Interactive Crime Density Map
 
 Created using leaflet to visualize high-crime zones geographically.
 
-Crime Type Distribution
+- Crime Type Distribution
 
 Illustrates the proportion of different crime categories under various weather patterns.
 
-Time-Series Correlation
+- Time-Series Correlation
 
 Combines both weather and crime data to examine temporal alignments or anomalies.
 
