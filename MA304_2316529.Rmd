@@ -1,0 +1,671 @@
+---
+title: "MA304_DATA VISULIZATION PROJECT"
+output: html_document
+date: "2024-04-24"
+author: "BHARATH YUVARAJ"
+Register NO : 2316529
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+# Introduction
+Data from the weather was aggregated to calculate average values for the temperature, humidity, wind speed, precipitation, and visibility for the period covered. This data was then compared to the frequency of Crime behavior incidents reported in January 2023.Crime data comprises records of reported criminal incidents, including details such as the type of crime, location, date, time, and demographic information of offenders and victims.From this insights the potential influence of atmospheric conditions on criminal activity, aiding in the development of proactive strategies for crime prevention and public safety.
+
+#Importing Libraries
+```{r}
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(leaflet)
+library(xts)
+library(lubridate)
+```
+# Start of Pre-Processing 
+#Load the Dataset 
+```{r,eval=TRUE}
+#Read the Initial Data set 
+Crime_Data<- read.csv(file="crime23.csv")
+head(Crime_Data)
+dim(Crime_Data)
+
+Temperature_Data <-read.csv(file="temp2023.csv")
+head(Temperature_Data)
+dim(Temperature_Data)
+```
+Observation:
+The Crime Data set has 6878rows and 12columns 
+The Temperature Data set has 365rows  18columns
+
+#Checking the structure of both Dataset
+```{r,eval=TRUE}
+str(Crime_Data)
+
+str(Temperature_Data)
+```
+Observation:
+For Crime_Data and Temperature_Data, it will show the structure of the data frame, including the names, classes, and first few values of each variable.
+
+#Checking the Null Value for both the Dataset
+```{r,eval=TRUE}
+# Check for NULL values in the Crime_Data dataset
+null_values_crime <- sum(is.na(Crime_Data))
+null_values_crime
+
+# Check for NULL values in the Temperature_Data dataset
+null_values_Temp <- sum(is.na(Temperature_Data))
+null_values_Temp
+```
+Observation:
+There are around 7555 null values in the crime data set
+There are around 851 null values in the Temperature Data set
+
+#Checking the null values for each columns
+```{r,eval=TRUE}
+# Check for NULL values in the Crime_Data data set
+colSums(is.na(Crime_Data))
+
+# Check for NULL values in the Temperature_Data data set
+colSums(is.na(Temperature_Data))
+```
+Observation:
+while checking the null values in each columns in the crime data set in two columns that is (Context has 6878 null values and outcome_status has 677 null values).In the temperature data set there are around 5 columns that has the null values that are (Precmm has 27,lowClOct has 13,SunD1h has 82,PreselevHp has 365 and SnowDepcm has 364)
+
+#Dropping the column context as there more null values
+```{r,eval=TRUE}
+# Drop the 'location_subtype' column from the data set
+Crime_Data <- Crime_Data[, !names(Crime_Data) == "context", drop = FALSE]
+```
+Observation:
+So while checking the null values the column context that where not much impacted to crime dataset so had to drop this column and used other column for further exploratory data analysis.
+
+#Checking if the context data is dropped from crime_Data
+```{r,eval=TRUE}
+dim(Crime_Data)
+```
+Observation:
+So after dropping the context column to cross verify if the column is dropped checked with the dimension and the total number or columns were 11
+
+#Checking duplicate vales in both dataset
+```{r,eval=TRUE}
+sum(duplicated(Crime_Data))
+
+sum(duplicated(Temperature_Data))
+```
+Observation:
+Checked the duplicate column for both data set and there were no any duplicate value found.
+
+#Convert the char Date column into date type
+```{r,eval=TRUE}
+Crime_Data$date<- ym(Crime_Data$date)
+
+Temperature_Data$Date<- ymd(Temperature_Data$Date)
+
+```
+Observation:
+So the crime data set had the date column as the string type so converted the crime data set to date as year and month to the data set and for the Temperature data set also had date column as the string type converted into year,month and day.
+
+#Checking whether the date columns is converted into Date column
+```{r,eval=TRUE}
+
+class(Crime_Data$date)
+
+class(Temperature_Data$Date)
+```
+Observation:
+Checking the type of date column for both data set.
+
+#Checking whether the date columns is converted into Date column
+```{r,eval=TRUE}
+Crime_Data$month <- month(Crime_Data$date)
+
+Temperature_Data$month <-month(Temperature_Data$Date)
+head(Crime_Data)
+```
+Observation:
+The code you provided adds a new column named month to both Crime_Data and Temperature_Data.This column contains the month extracted from the date column in Crime_Data and the Date column in Temperature_Data
+
+# Crime Data set with EDA
+
+#Creating the table of outcome_status
+```{r,eval=TRUE}
+# Count the frequency of each outcome status
+outcome_status_counts <- table(Crime_Data$outcome_status)
+
+# Convert the table to a data frame
+outcome_status_df <- as.data.frame(outcome_status_counts)
+names(outcome_status_df) <- c("Outcome_Status", "Frequency")
+
+# Sort the data frame by frequency in descending order
+outcome_status_df <- outcome_status_df[order(-outcome_status_df$Frequency), ]
+
+# Print the sorted table
+print(outcome_status_df)
+```  
+Observation:
+The outcome_status had  categorical distribution took the overall count of the crime for all the outcome_status plotted a table checked the count for all outcome_status distribution.The highest count was Investigation complete; no suspect identified with the crime count of 2656 and the second was Unable to prosecute suspect with count of 1959 and third was Under investigation with count of 439 and the least count was Suspect charged as part of another case with the count of 1.
+
+#Creating the pie chart to see the outcome_statusin percentage
+```{r,eval=TRUE}
+outcome_status_crime_table <- Crime_Data %>% group_by(outcome_status) %>% summarise(total = table(outcome_status))
+outcome_status_crime_table$total <- as.numeric(outcome_status_crime_table$total)
+Graph = plot_ly(outcome_status_crime_table, labels = ~outcome_status, values = ~total, type = "pie")
+Graph <- Graph %>% layout(title = "Crime outcome status distribution")
+Graph
+```
+Observation:
+The outcome_status with categorical distribution of the overall count of the crime for all the outcome_status plotted a pie chart and checked the percentage for all outcome_status distribution.The highest percentage was Investigation complete; no suspect identified with the crime percentage of 42.8% and the second was Unable to prosecute suspect with percentage of 31.6% and third was Under investigation with percentage of 7.08% and the least count was Suspect charged as part of another case with the percentage of 0.016%.
+
+#Creating the stacked overflow chart to see the top three outcome_status for all categories
+```{r,eval=TRUE}
+# Create a data frame with the provided outcome status data
+outcome_status_data <- data.frame(
+  outcome_status = c(
+    "Investigation complete; no suspect identified",
+    "Unable to prosecute suspect",
+    "Under investigation",
+    "Awaiting court outcome",
+    "Local resolution",
+    "Court result unavailable",
+    "Status update unavailable",
+    "Action to be taken by another organisation",
+    "Further action is not in the public interest",
+    "Offender given a caution"
+  ),
+  total = c(2656, 1959, 439, 260, 239, 206, 177, 104, 82, 61)
+)
+
+# Filter data for the top 3 outcome statuses
+top_outcome_status <- head(outcome_status_data[order(outcome_status_data$total, decreasing  = TRUE),], 3)
+
+# Filter Crime_Data for the top 3 outcome statuses
+top_outcome_data <- Crime_Data %>%
+  filter(outcome_status %in% top_outcome_status$outcome_status)
+
+# Create a bar plot
+x<-ggplot(top_outcome_data, aes(x = category, fill = outcome_status)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(title = "Top 3 Outcome Status by Crime Category", x = "Crime Category", y = "Total Count") +
+  scale_fill_manual(values = c("#FF5733", "#C70039", "#900C3F"))
+ggplotly(x,width = 850)
+```
+Observation:
+The stacked bar chart above depicts outcome_status from a crime-record from the colchester town for a particular categories, across two categorical variables: crime category and outcome_status.For most crime categories, the count of outcomes is relatively low compared to "violent crime", which has the highest counts across all three outcome statuses. The "violent crime" category particularly stands out with a very high count of cases that are "Under investigation" and "possession 0f weapons" has the lowest. Each bar is subdivided based on levels of the second categorical variable, outcome_status. We can see that for most categories, unable to prosecute suspect is quite a bit larger than investigation complete no suspect, which in turn is larger than under investigation. The criminal damage arson appears to have a lower proportion of  attributed to unable to prospect suspect, while equipment has a larger attributed for investigation complete no suspect.
+
+#Bar plot to see the top 5 outcome_status along with location_type
+```{r,eval=TRUE}
+topCrime_outcome_status <- subset(Crime_Data, outcome_status %in% c("Investigation complete; no suspect identified","Unable to prosecute suspect","No Outcome","Status update unavailable","Under investigation"))
+
+Graph <- ggplot(topCrime_outcome_status, aes(x = outcome_status, fill = location_type)) + geom_bar() + labs(title = "Bar Plot of Crime Outcome",x = "Crime Outcome",y = "Number of Crimes") + theme(axis.text.x = element_text(angle = 45, hjust = 0.5)) + scale_y_continuous(breaks = seq(0, 3000, by = 500)) + facet_grid(location_type~.,scales="free") +
+  theme(legend.position = "none")
+
+ggplotly(Graph)
+```
+Observation:
+From the above bar plot we can see the top 5 crime outcome_status along with the location_type.In the Top 5 crime outcome_status the investigation complete no suspect identified has larger count 2625 force as location_type and the second is unable to prosecute suspect with count of 1959 force as location_type and the third is under investigation count of 434 and the least is status update unavailable count of 158 force as location_type where as the location_type BTP has the highest count of 19 for status update unavailable of crime_outcome status and the second with least count 5 for under investigation of crime_outcome status.
+
+#plot to see the in which street of colcherter the is more crime happinig
+```{r,eval=TRUE}
+Crime_Location <- Crime_Data %>% group_by(long, lat, street_name) %>% summarise(total_crime = table(lat))
+
+head(Crime_Location)
+
+crime.map <- Crime_Location %>%
+  leaflet()%>%
+  addTiles()%>%
+  addCircleMarkers(
+    data = Crime_Location,
+    lng = ~long,
+    lat = ~lat,
+    radius = ~total_crime * 0.1,
+    color = "#0B2D9E",
+    fillOpacity = 0.7,
+    popup = ~paste("Street name:", street_name, "<br> crime count: ", total_crime)
+  )
+
+# Display the map
+crime.map
+``` 
+Observation:
+By observation the above map of the colchester city with street name and latitude and longitude direction the total numbers of crime happening in the colchester is more.The highest crime happening is On or near Shopping Area or  near Colorway Avenue with total crime count of 164.The second highest is near St Nicholas Street with crime count of 150 third highest is near Balkerne Gardens with crime count 148.So as per the this map there are more crime happening near culvert street and high street with highest number of crime records found.
+ 
+#Checking the category distriution
+```{r,eval=TRUE}
+# Calculate frequency of each category
+category_counts <- table(Crime_Data$category)
+
+# Convert to data frame and reorder categories
+category_crime <- data.frame(Category = names(category_counts),
+                          Frequency = as.numeric(category_counts))
+category_crime <- category_crime[order(-category_crime$Frequency), ]
+
+# Visualization: Crime Category Distribution (Sorted and with Data Labels)
+Graph<- ggplot(category_crime, aes(x = reorder(Category, -Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+  geom_text(aes(label = Frequency), vjust = -0.5, color = "black", size = 3) +
+  labs(title = "Crime Category Distribution") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("Category") +
+  ylab("Total Count")
+ggplotly(Graph)
+```
+Observation:
+In the above bar chart we can see all the crime category with the highest count of 2633 is violent-crime and the least count of 74 for possession-of-weapons.From this bar plot we can easily identify that violent-crime is happening the highest around the colchester city.The second crime category is the anti-social-behavior with the count of 677 and third is criminal-damage-arson with he count of 581.
+
+#Crime Rate trend by year
+```{r,eval=TRUE}
+crime_rate_yearly <- Crime_Data %>% group_by(date) %>% summarise(total_crime = table(month))
+
+head(crime_rate_yearly)
+xts.crime_rate_yearly <- xts(crime_rate_yearly$total_crime, crime_rate_yearly$date)
+Graph <- autoplot(xts.crime_rate_yearly) + geom_line(color = "white") + geom_point(color = "black") + xlab("months") + ylab("crime count") +
+  ggtitle("Crime rate for the year 2023")+ theme_bw()+theme_dark()
+
+ggplotly(Graph)
+```
+Observation:
+The line chart above shows the total crime count between month and year period. As time progresses from left to right, each point is connected to the next with a straight line segment, from first to last points connect the monthly crime records. We can read from plots that January month has the highest crime count of 651 with its highest vertical positions and the least is February with it crime-count of 467 and  between March and early September there is second highest point that is September with crime-count of 642, then fell gradually to about 551 in late December.
+
+#Highest count of criminal record in January Month plot against category and location type
+```{r,eval=TRUE}
+#crime category distribution in the month of January
+January_crime_rate <- Crime_Data[Crime_Data$date == "2023-01-01",]
+January_crime_rate$category <- factor(January_crime_rate$category, levels = names(sort(table(January_crime_rate$category), decreasing = TRUE)))
+Graph <- ggplot(data = January_crime_rate, aes(x = category)) + geom_bar(fill = "#C70039") +
+  xlab("Crime Category") + ylab("Crime count") + ggtitle("Crime Category distribution for January 2023") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+Graph1 <- Graph + facet_grid(location_type~., scales = "free")
+ggplotly(Graph1)
+```
+Observation:
+From the above bar plot the highest crime records for January month along with the location type is been plotted here.
+As you see from the plot that highest crime category is the violent-crime with count of 237 for the location type force.The least count of 3 for possession-of-weapons.From this bar plot we can easily identify that violent-crime is happening highest in the month of January for the location type Force.The second crime category is the Shoplifting  with the count of 76 and third is vehicle-crime with he count of 65.As January is predicted the highest crime record for the 2023 in colchester the top three crime record are violent-crime,Shoplifting-crime and vehicle-crime for the location type force only. 
+
+#Second Highest count of criminal record in september Month plot against crime-category and location-type
+```{r,eval=TRUE}
+#crime category distribution in the month of September
+color_scale<-heat.colors(n=14)
+september_crime_rate <- Crime_Data[Crime_Data$date == "2023-09-01",]
+september_crime_rate$category <- factor(september_crime_rate$category, levels = names(sort(table(september_crime_rate$category), decreasing = TRUE)))
+Graph <- ggplot(data = september_crime_rate, aes(x = category)) + geom_bar(fill = "#C70039") +
+  xlab("Crime Category") + ylab("Crime count") + ggtitle("Crime Category distribution for September 2023") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+Graph1 <- Graph + facet_grid(location_type~., scales = "free")
+ggplotly(Graph1)
+```
+Observation:
+From the above bar plot the second highest crime records for September month along with the location type is been plotted here.As you see from the plot that highest crime category is the violent-crime with count of 262 for the location-type force and location-type BTP the count is 1.The least count of 7 for theft-from-the-person for the location-type force.From this bar plot we can easily identify that violent-crime is happening highest in the month of September also for the location type Force and also for location-type BTP .The second crime category is the ant-social-behavior with the count of 90 for the location-type force and third is criminal-damage-arson with he count of 47 for the location-type force.As September is also predicted the highest crime record for the 2023 in colchester the top three crime record areviolent-crime,ant-social-behavior and criminal-damage-arson for the location type force and for location type BTP violent-crime,public order and vehicle crime.
+
+#Checking all the months violent Crime along with location type
+```{r}
+month_crime_data <- Crime_Data %>% group_by(category, date, location_type) %>% summarise(total_crime = table(category))
+month_crime_data
+
+Graph <- ggplot(month_crime_data[month_crime_data$category == "violent-crime",], aes(x = date, y = total_crime)) + geom_line(color = "white") + geom_point(color = "black") + xlab("months") + ylab("crime count") +
+  ggtitle("Violent Crime trend in Colchester for the year 2023")+theme_dark()
+
+Graph1 <- Graph + facet_grid(location_type~., scales = "free")
+
+ggplotly(Graph1)
+```
+Observation:
+The line chart above shows the total crime count between month,year,category type violent-crime and location-type. As time progresses from Jan 2023 to Dec 2023, each point is connected to the next with a straight line segment, from first to last points connect the monthly crime records. We can read from plots that September month has the highest crime count of 262 with its highest vertical positions for the location type Force and the least is February with it crime-count of 181.The second highest point that is January with crime-count of 237 where as in location_type BTP with highest crime count of 3 for for the month August and second highest is April crime count of 2 and least lies in three months march,September and October.
+
+#Checking all the months anti-social-behaviour along with location type
+```{r}
+month_crime_data <- Crime_Data %>% group_by(category, date, location_type) %>% summarise(total_crime = table(category))
+month_crime_data
+
+Graph <- ggplot(month_crime_data[month_crime_data$category == "anti-social-behaviour",], aes(x = date, y = total_crime)) + geom_line(color = "white") + geom_point(color = "black") + xlab("months") + ylab("crime count") +
+  ggtitle("Anti-social-behaviour for the year 2023")+theme_dark()
+
+Graph1 <- Graph + facet_grid(location_type~., scales = "free")
+
+ggplotly(Graph1)
+```
+Observation:
+The line chart above shows the total crime count between month,year,category type anti-social-behavior and location-type. As time progresses from Jan 2023 to Dec 2023, each point is connected to the next with a straight line segment, from first to last points connect the monthly crime records. We can read from plots that September month has the highest crime count of 90 with its highest vertical positions for the location type Force and the least is March with it crime-count of 21.The second highest point that is July with crime-count of 76 for the location type Force and the third highest for the month May location_type Force.
+
+#Checking all the months criminal-damage-arson along with location type
+```{r}
+month_crime_data <- Crime_Data %>% group_by(category, date, location_type) %>% summarise(total_crime = table(category))
+month_crime_data
+
+Graph <- ggplot(month_crime_data[month_crime_data$category == "criminal-damage-arson",], aes(x = date, y = total_crime)) + geom_line(color = "white") + geom_point(color = "black") + xlab("months") + ylab("crime count") +
+  ggtitle("Criminal-damage-arson for the year 2023")+theme_dark()
+
+Graph1 <- Graph + facet_grid(location_type~., scales = "free")
+
+ggplotly(Graph1)
+```
+Observation:
+The line chart above shows the total crime count between month,year,category type criminal-damage-arson and location-type. As time progresses from Jan 2023 to Dec 2023, each point is connected to the next with a straight line segment, from first to last points connect the monthly crime records. We can read from plots that April and May month has the highest crime count of 63 with its highest vertical positions for the location type Force and the least is August with it crime-count of 33.The second highest point that is January with crime-count of 59 with location type Force where as in location_type BTP with highest crime count of 1 for for the month May.
+
+# Weather Data start with EDA
+
+#Correlation Plot 
+```{r}
+#Correlation Plot 
+
+corr_martix_numeric <- select(Temperature_Data, c(TemperatureCAvg, TemperatureCMax,TemperatureCMin, HrAvg, WindkmhInt,PresslevHp, 
+                                     TotClOct, VisKm,WindkmhGust))
+
+Round_martix <- round(cor(corr_martix_numeric),2)
+Round_martix
+
+
+library(reshape2)
+b1 <- melt(Round_martix)
+head(b1)
+
+library(ggplot2)
+Graph <- ggplot(data = b1, aes(x=Var1, y=Var2, fill=value)) + 
+     geom_tile(color = "white") + geom_text(aes(Var2, Var1, label = value), color = "black", size = 4) + 
+     scale_fill_gradient2(low = "#0D9264", high = "#113DCF", mid = "#87fafa", 
+                       midpoint = 0, limit = c(-1,1), space = "Lab", 
+                       name="Pearson\nCorrelation") + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplotly(Graph)
+```
+Observation:
+The maximum temperature and the average temperature feature has the highest positive correlation value of one where the values vary proportionally. Following that, Minimum temperature and average dew point temperature features has the correlation value of 0.9 with maximum and average temperature variables. Wind speed and wind gust in Km/Hr features has the weakest positive correlation with minimum temperature having the value of 0.1. The features maximum temperature and average relative humidity are most negatively correlated with the value of -0.6 where the data vary inversely proportional.
+
+#Create the violin plot for all temperture distribution
+```{r}
+# Assuming 'Temperature_Data' is your data set containing temperature data
+Temperature_Data_box_plot <- select(Temperature_Data, c(TemperatureCAvg, TemperatureCMax, TemperatureCMin))
+
+# Reshape the data for plotting
+melt_data <- reshape2::melt(Temperature_Data_box_plot)
+
+# Create the violin plot
+Graph <- ggplot(data = melt_data, aes(x = variable, y = value, fill = variable)) + 
+  geom_violin() +
+  labs(x = "Temperature", y = "count", fill = "Variable") +
+  ggtitle("Temperature Violin Plot") +
+  theme_minimal()+theme_dark()
+
+# Convert ggplot to plotly
+ggplotly(Graph)
+
+```
+Observation:
+The violin plots are similar to box plots,except that they also show the kernel probability density of the data at different values. For the Avg Temperature values at top quatitle is 23.1 and for the lower quatitle is around -2.6 and for the Max Temperature upper quatitle is 30 and the lower quatitle is 1.7 where as Min Temperature the upper quartitle is 16.2 and lower quatitle is around -6.2.In this plot we can see that the highest is the Max Temperature that is much used.
+
+#Box plot for wind speed
+```{r}
+wind_boxplot<-ggplot(Temperature_Data, aes(x=WindkmhDir,y=TemperatureCMax))+geom_boxplot(scale='area',col="#581845")+xlab('Wind Directions')+ylab('Maximum Temperature in C')+ggtitle('Compare max temperature and Wind directions')+theme_dark()
+ggplotly(wind_boxplot)
+```
+Observation:
+In the above Box plot for the Max Temperature VS Wind Directions.A box plot is a graph summarizing a set of data.South wind direction has the maximum speed 30.04 and the minimum speed is around 6.60.The next is wind is flowing in the direction of ENE with the maximum speed of around 30.The least is SE with wind speed of 17.70.The shape of the box plot shows how the data is distributed and it also shows any outliers in the plot for NE and SEE.It is a useful way to compare different sets of wind directions with the maximum temperature.
+
+#Average Temperature vs. Precipitation
+```{r}
+precipation <- ggplot(Temperature_Data, aes(x = TemperatureCAvg, y = Precmm)) +
+  geom_point(color = "white") +
+  labs(x = "Average Temperature (°C)", y = "Precipitation (mm)") +
+  ggtitle("Average Temperature vs. Precipitation")+theme_dark()
+ggplotly(precipation)
+```
+Observation:
+The Plot seen above is scattered plot for Avg Temperature vs Precipitation.The scattered uses dots to represent values for two different numeric variables.Scatter plots are used to observe relationships between variables.From this data set when the temperature is between 10 to 20 degree you can see there is more precipitation be found.The highest was in the 13 degree with Precipitation of 33.6. For this we got to know there might be rain or snow happening most in the temperature happening 16-17 degree.
+
+#Plotting a scatter plot of Wind Speed vs. Wind Direction
+```{r}
+# Plotting a scatter plot of Wind Speed vs. Wind Direction
+Wind_speed<-ggplot(Temperature_Data, aes(x = WindkmhDir, y = WindkmhInt)) +
+  geom_point(color = "white") +
+  labs(x = "Wind Direction", y = "Wind Speed (km/h)", title = "Scatter Plot of Wind Speed vs. Wind Direction")+theme_dark()
+ggplotly(Wind_speed)
+```
+Observation:
+From the above scattered plot we can see that wind speed(km/hr) vs Wind directions.From these plot we see that the highest wind directions is in WNW with the speed of 37.5 km/hr and the other wind directions are which are at close to 37km/hr are SW and WSW these are almost having the same speed of wind.From this plot we assume that wind direction are mostly in west direction with the seed of around 33-37.5km/hr speed.
+
+#Histogram with density curve
+```{r}
+Avg_Temp<-ggplot(Temperature_Data, aes(x = TemperatureCAvg)) +
+  geom_histogram(aes(y = ..density..), binwidth = 1, fill = "skyblue", color = "black") +
+  geom_density(alpha = 0.5, fill = "orange") +
+  labs(x = "Average Temperature (°C)", y = "Density") +
+  ggtitle("Distribution of Average Temperature")+theme_dark()
+ggplotly(Avg_Temp)
+
+```
+Observation:
+This plot tell histogram along with density curve with visualization of the distribution of average temperature values, combining the discrete representation of the histogram with the continuous estimation provided by the KDE curve. It enables viewers to gain insights into the frequency and density of temperature observations across the range, facilitating a deeper understanding of the temperature distribution.
+
+#Line plot with smoothing for TemperatureCMax and TemperatureCMin over time
+```{r}
+Temp_smooth <- xts(as.data.frame(forecast::ma(Temperature_Data[,c("TemperatureCMax", "TemperatureCMin")], 30)),order.by =  Temperature_Data$Date)
+names(Temp_smooth) <- c("max_temp", "min_temp")
+Graph <- autoplot(Temp_smooth, facet = NULL) + geom_line(size = 0.7)+ xlab("Months") + ylab("crime count") + 
+  ggtitle("Temperature trend for the year 2023-2024")+ theme_bw()+theme_dark()
+
+ggplotly(Graph)
+
+```
+Observation:
+The line chart above shows the temperature count between month and year period. As time progresses from left to right, each point is connected to the next with a straight wave segment. We can read from plots that June month has the highest temperature of 24.7 degree and the least is January with it temperature of -6 degree and  between February and early November there is fluctuation of temperature up and down there is not constant temperature there is second highest point that is June with Temperature of 29.6.So the maximum temperature is in month of June-September.The minimum Temperature January and December.
+
+#Avg Humidity Over year 2023-2024
+```{r}
+Humidity_plot <- ggplot(Temperature_Data, aes(x = Date)) +
+  geom_line(aes(y = HrAvg, color = "Avg Humidity")) +
+  labs(x = "Months", y = "Humidity (°C)", color = "Humidity") +
+  ggtitle("Average Humidity Over year 2023-2024") +
+  theme_minimal()+theme_dark()
+ggplotly(Humidity_plot)
+```
+Observation:
+The line chart above shows the humidity count between month and year period. As time progresses from left to right, each point is connected to the next with a straight wave segment. We can read from plots that January month has the highest humidity of 97.9 degree and the least is July with it temperature of 43 degree and  between February and early November there is fluctuation of temperature up and down there is not constant temperature there is second highest point that is October with Temperature of 96.6.So the maximum humidity is in month of January and October.The minimum humidity July and August.
+
+#Average Visiblility trend for the year 2023-2024
+```{r}
+Visiblility_plot <- ggplot(Temperature_Data, aes(x = Date)) +
+  geom_line(aes(y = VisKm, color = "Average Visiblility")) +
+  labs(x = "Months", y = "Visiblility", color = "Visiblility") +
+  ggtitle("Average Visiblility trend for the year 2023-2024") +
+  theme_minimal()+theme_dark()
+ggplotly(Visiblility_plot)
+```
+Observation:
+The line chart above shows the Average Visibility count between month and year period. As time progresses from left to right, each point is connected to the next with a straight wave segment. We can read from plots that December month has the highest Visibility of 72.9 degree and the least is December with it temperature of 3.6 degree and  between January and early November there is fluctuation of temperature up and down there is not constant Visibility there is second highest point that is July with Temperature of 68.1.So the maximum Visibility is in month of July-December.The minimum Visibility December.The because the temperature drop is more in this month.
+
+#Wind Speed trend for the year 2023-2024
+```{r}
+wind_plot <- ggplot(Temperature_Data, aes(x = Date)) +
+  geom_line(aes(y = WindkmhInt, color = "WindkmhInt")) +
+  labs(x = "Months", y = "Wind Speed (km/h)", color = "Wind Speed (km/h)") +
+  ggtitle("Wind Speed trend for the year 2023-2024") +
+  theme_minimal()+theme_dark()
+
+ggplotly(wind_plot)
+
+```
+Observation:
+The line chart above shows the wind speed count between month and year period. As time progresses from left to right, each point is connected to the next with a straight wave segment. We can read from plots that December month has the highest wind speed of 37.5 km/hr and the least is January with it temperature of 6.3 km/hr and  between January and early November there is fluctuation of temperature up and down there is not constant wind speed there is second highest point that is march and December with wind speed 37.2-37.4 km/hr.So the maximum wind speed is in month of March and December.The minimum wind speed January.
+
+#Sunlight Duration trend for the year 2023-2024
+```{r}
+# Replace NA values in SunD1h with zeros
+Temperature_Data$SunD1h[is.na(Temperature_Data$SunD1h)] <- 0
+
+# Plot with both Wind Speed and Sunlight Duration
+Sunlight_plot <- ggplot(Temperature_Data, aes(x = Date)) +
+  geom_line(aes(y = SunD1h, color = "Sunlight Duration (hours)")) +
+  labs(x = "Months", y = "Sunlight", color = "Sunlight") +
+  ggtitle("Sunlight Duration trend for the year 2023-2024") +
+  theme_minimal()+theme_dark()
+
+ggplotly(Sunlight_plot)
+
+```
+Observation:
+The line chart above shows the sunlight count between month and year period. As time progresses from left to right, each point is connected to the next with a straight wave segment. As we can see that there are Nan values present in this columns so to see the plot marked Nan values to zero to check whether there is any significance change in the plot. We can read from plots that May-August month has the highest sunlight of 15 degree and the least is December with it temperature of 0.1 degree .So the maximum sunlight falling is in month of May-August.The minimum sunlight falling speed December.
+
+# Finial Analysis on Both Data sets
+
+# 1) Analysis on the Avg Temperature VS Crime Count on Both the Dataset based on months
+```{r}
+# Calculate the total crime count for each month
+crime_rate_yearly <- Crime_Data %>%
+  mutate(month = as.Date(date)) %>%
+  group_by(month) %>%
+  summarise(total_crime = n())
+
+# Convert to xts object
+xts_crime <- xts(crime_rate_yearly$total_crime, order.by = crime_rate_yearly$month)
+
+# Plot for crime data
+g_crime <- ggplot(data = as.data.frame(xts_crime)) +
+  geom_line(aes(x = index(xts_crime), y = coredata(xts_crime)), color = "white") + 
+  geom_point(aes(x = index(xts_crime), y = coredata(xts_crime)), color = "black") +
+  labs(x = "Date", y = "Total Crime Count") +
+  ggtitle("Crime Rate by Month") +
+  theme_minimal()
+
+# Convert to plotly object
+g_crime_plotly <- ggplotly(g_crime)
+
+# Calculate the average temperature for each month
+avg_temp_by_month <- Temperature_Data %>%
+  mutate(month = as.Date(Date)) %>%
+  group_by(month) %>%
+  summarise(avg_temp = mean(TemperatureCAvg, na.rm = TRUE))
+
+# Convert to xts object
+xts_temp <- xts(avg_temp_by_month$avg_temp, order.by = avg_temp_by_month$month)
+
+# Plot for temperature data
+g_temp <- ggplot(data = as.data.frame(xts_temp)) +
+  geom_line(aes(x = index(xts_temp), y = coredata(xts_temp)), color = "blue") +
+  geom_point(aes(x = index(xts_temp), y = coredata(xts_temp)), color = "black") +
+  labs(x = "Date", y = "Average Temperature (°C)") +
+  ggtitle("Average Temperature by Month") +
+  theme_minimal()+theme_dark()
+
+# Convert to plotly object
+g_temp_plotly <- ggplotly(g_temp)
+
+# Display both plots
+subplot(g_temp_plotly, g_crime_plotly)
+```
+Observation:
+Scatter Plot Analysis (Left):
+The scatter plot demonstrates individual data points that signify the crime rate incidents per day over the months. Each dot represents a particular day's crime rate. The trend line running through the scatter plot points indicates an overall trend in the crime rate. Upon observation, it is noted that the crime rate starts with a lower frequency at the beginning of the year, sees an increase, and then shows a decline, followed by a slight upward trend towards the end of the observed period.
+
+Line Graph Analysis (Right):
+The line graph portrays a monthly aggregate or average crime rate. It starts with a sharp increase from January to February, followed by fluctuations with notable peaks and troughs. The highest point is observed around July, after which there is a steep decline leading to a lower crime rate in August. This is succeeded by a rise in the following months, with another peak in October, and a subsequent drop.
+
+# 2) Analysis on the Crime Count vs Total Precipitation on Both the Dataset based on months
+```{r}
+# Calculate the total crime count for each month
+crime_rate_yearly <- Crime_Data %>%
+  mutate(month = as.Date(date)) %>%
+  group_by(month) %>%
+  summarise(total_crime = n())
+
+# Calculate the total precipitation for each month
+total_precipitation <- Temperature_Data %>%
+  mutate(month = as.Date(Date)) %>%
+  group_by(month) %>%
+  summarise(total_precipitation = mean(Precmm, na.rm = TRUE))
+
+# Merge crime and precipitation data
+merged_data <- merge(crime_rate_yearly, total_precipitation, by = "month", all = TRUE)
+
+# Fill missing precipitation values with 0
+merged_data$total_precipitation[is.na(merged_data$total_precipitation)] <- 0
+
+# Convert month to factor with month labels
+merged_data$month <- factor(month(merged_data$month), labels = month.abb)
+
+# Create scatter plot
+scatter_plot <- ggplot(merged_data, aes(x = month, y = total_precipitation, color = total_crime)) +
+  geom_point() +
+  labs(x = "Month", y = "Total Precipitation (mm)", color = "Total Crime Count", title = "Crime Count vs Total Precipitation") +
+  theme_minimal()
+
+# Convert to plotly object
+scatter_plotly <- ggplotly(scatter_plot)
+
+# Show the plot
+scatter_plotly
+```
+Observation:
+On the above analysis on Crime Count vs Total Precipitation on Both the Data set based on months.In the month on January the number of crime count is around 651 and Precipitation is around 8.2.where as in the month of August the total crime 550 and Precipitation is around 1.2 in the month of September total crime is 642 and Precipitation is 0.2 and in the month of November total crime 563 and Precipitation is around 2.6.By doing this analysis we can see that when the Precipitation is between 0-8mm the crime count is more in certain months like January,August September and November.
+
+#Splitting the both the dataset and combining them to plot Correlation
+```{r}
+#Splitting the both the data set for Correlation Plot 
+Crime_Data_combined <- Crime_Data
+Crime_Data_combined$date <- as.Date(paste0(Crime_Data_combined$date,"-01"), format = "%Y-%m-%d")
+Crime_Data_combined$Month <- format(as.Date(Crime_Data_combined$date), "%b")
+crime_counts_by_month_data <- as.data.frame(table(Crime_Data_combined$Month))
+colnames(crime_counts_by_month_data) <- c("Month", "CrimeCount")
+
+Temp_Data_combined <- Temperature_Data
+Temp_Data_combined$Month <- format(as.Date(Temp_Data_combined$Date), "%b")
+climate_change_by_month_data <- Temp_Data_combined %>% group_by(Month) %>% summarise(avg_temperature = mean(TemperatureCAvg, na.rm = TRUE), avg_wind_speed = mean(WindkmhInt, na.rm = TRUE), avg_visibility = mean(VisKm, na.rm = TRUE),avg_Precipitation = mean(Precmm, na.rm = TRUE))
+
+
+Both_combined_dataset <- merge(crime_counts_by_month_data, climate_change_by_month_data)
+Both_combined_dataset
+```
+# 3) Correlation Plot Combining both the Dataset
+```{r}
+correlation_ALL_Dataset <- Both_combined_dataset[c("CrimeCount","avg_temperature","avg_wind_speed","avg_visibility","avg_Precipitation")]
+rounding_martix <- round(cor(correlation_ALL_Dataset),1)
+library(reshape2)
+melting_correlation_martix <- melt(rounding_martix)
+head(melting_correlation_martix)
+library(ggplot2)
+g15<-ggplot(data = melting_correlation_martix, aes(x=Var1, y=Var2, fill=value)) + geom_text(aes(Var2,Var1,label = value),color = "black", size=3)+
+  geom_tile()+scale_fill_gradient2(low = "blue", high = "red", limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation")+ 
+  theme(axis.text.x = element_text(angle = 40, vjust = 1, 
+    size = 12, hjust = 1))+ggtitle("Correlation matrix for features of combined data sets")
+ggplotly(g15)
+```
+# The Whole Data Summary
+
+The Data set which was given to work on the Data visualization project has two parts. The main data set that is crime which has 6878 Rows and 12 Columns, where as the other data set that is Temperature which has 365 Rows  18Columns.Data from the weather was aggregated to calculate average values for the temperature, humidity, wind speed, precipitation, and visibility sunlight for particular period time. This data was then compared to the frequency of Crime behavior incidents reported in January 2023.Crime data comprises records of reported criminal incidents, including details such as the type of crime, location, date, time, and demographic information of offenders and victims.
+
+In the Crime Data set the first thing that was checked was outcome_status which had categorical distribution took the overall count of the crime for all the outcome_status and plotted a table and checked the count for all outcome_status distribution.The highest count was Investigation complete; no suspect identified with the crime count of 2656 and the second was Unable to prosecute suspect with count of 1959 and third was Under investigation with count of 439 and the least count was Suspect charged as part of another case with the count of 1 and also plotted pie chart to see how the distribution is spread around for the outcome_status.
+
+Than for better understanding and deep analysis plotted stacked bar chart for top three outcome_status.For most crime categories, the count of outcomes is relatively low compared to "violent crime", which has the highest counts across all three outcome statuses. The "violent crime" category particularly stands out with a very high count of cases that are "Under investigation" and "possession 0f weapons" has the lowest. Each bar is subdivided based on levels of the second categorical variable, outcome_status. We can see that for most categories, unable to prosecute suspect is quite a bit larger than investigation complete no suspect, which in turn is larger than under investigation. The criminal damage arson appears to have a lower proportion of  attributed to unable to prospect suspect, while equipment has a larger attributed for investigation complete no suspect.
+
+Also plotted the top 5 crime outcome_status along with the location_type.In the Top 5 crime outcome_status the investigation complete no suspect identified has larger count 2625 force as location_type and the second is unable to prosecute suspect with count of 1959 force as location_type and the third is under investigation count of 434 and the least is status update unavailable count of 158 force as location_type where as the location_type BTP has the highest count of 19 for status update unavailable of crime_outcome status and the second with least count 5 for under investigation of crime_outcome status.
+
+Than plotted a map for the colchester city with street name and latitude and longitude direction the total numbers of crime happening in the colchester is more.The highest crime happening is On or near Shopping Area or  near Colorway Avenue with total crime count of 164.The second highest is near St Nicholas Street with crime count of 150 third highest is near Balkerne Gardens with crime count 148.So as per the this map there are more crime happening near culvert street and high street with highest number of crime records found.
+
+Then plotted bar chart for crime category count the highest count of 2633 is violent-crime and the least count of 74 for possession-of-weapons.From this bar plot we can easily identify that violent-crime is happening the highest around the colchester city.The second crime category is the anti-social-behavior with the count of 677 and third is criminal-damage-arson with he count of 581.By doing more analysis on the crime category count plotted a line chart with total crime count between month and year period. From line plot January month has the highest crime count of 651 with its highest and the least is February with it crime-count of 467 and  between March and early September there is second highest point that is September with crime-count of 642, then fell gradually to about 551 in late December.
+
+After plotted the line chart found that January has highest crime with category of violent-crime with count of 237 for the location type force.The least count of 3 for possession-of-weapons.The second crime category is the Shoplifting  with the count of 76 and third is vehicle-crime with he count of 65.As January is predicted the highest crime record for the 2023 in colchester the top three crime record are violent-crime,Shoplifting-crime and vehicle-crime for the location type force only. The second highest crime records for September month with highest crime category is the violent-crime with count of 262 for the location-type force and location-type BTP the count is 1.The least count of 7 for theft-from-the-person for the location-type force.From this bar plot we can easily identify that violent-crime is happening highest in the month of September also for the location type Force and also for location-type BTP.As September is also predicted the highest crime record for the 2023 in colchester the top three crime record are violent-crime,ant-social-behavior and criminal-damage-arson for the location type force and for location type BTP violent-crime,public order and vehicle crime.
+
+For the month of September there was two location_type present so took top three categories like violent-crime,Anti-social-behavior and criminal-damage-arson plotted separate line chart along with months and checked the total crime count. The line chart for September month along with category type violent-crime and location-type.The plots for September month has the highest crime count of 262 with its highest vertical positions for the location type Force and the least is February with it crime-count of 181.The second highest point that is January with crime-count of 237 where as in location_type BTP with highest crime count of 3 for for the month August and second highest is April crime count of 2 and least lies in three months march,September and October.The next category type anti-social-behavior and location-type.We can read from plots that September month has the highest crime count of 90 with its highest vertical positions for the location type Force and the least is March with it crime-count of 21.The second highest point that is July with crime-count of 76 for the location type Force and the third highest for the month May location_type Force.The next category type criminal-damage-arson and location-type.We can read from plots that April and May month has the highest crime count of 63 with its highest vertical positions for the location type Force and the least is August with it crime-count of 33.The second highest point that is January with crime-count of 59 with location type Force where as in location_type BTP with highest crime count of 1 for for the month May.So these are analysis done in the crime data set
+
+Than started working on the temperature data set first plotted correlation plot for all the numeric data.The maximum temperature and the average temperature feature has the highest positive correlation value of one where the values vary proportionally. Following that, Minimum temperature and average dew point temperature features has the correlation value of 0.9 with maximum and average temperature variables. Wind speed and wind gust in Km/Hr features has the weakest positive correlation with minimum temperature having the value of 0.1. The features maximum temperature and average relative humidity are most negatively correlated with the value of -0.6 where the data vary inversely proportional.Than after seeing correlation plot got an idea for violin plots to see the kernel probability density of the data at different values.The Avg Temperature values at top quatitle is 23.1 and for the lower quatitle is around -2.6 and for the Max Temperature upper quatitle is 30 and the lower quatitle is 1.7 where as Min Temperature the upper quartitle is 16.2 and lower quatitle is around -6.2.In this plot we can see that the highest is the Max Temperature that is much used.
+
+For further analysis plotted different kinds plots with highly correlated values.The First one was Box plot was mapped for Max Temperature VS Wind Directions.South wind direction has the maximum speed 30.04 and the minimum speed is around 6.60.The next is wind is flowing in the direction of ENE with the maximum speed of around 30.The least is SE with wind speed of 17.70.The shape of the box plot shows how the data is distributed and it also shows any outliers in the plot for NE and SEE.It is a useful way to compare different sets of wind directions with the maximum temperature.The second Plot is scattered plot for Avg Temperature vs Precipitation.From this data set when the temperature is between 10 to 20 degree you can see there is more precipitation be found.The highest was in the 13 degree with Precipitation of 33.6. For this we got to know there might be rain or snow happening most in the temperature happening 16-17.The third plot is scattered plot we can see that wind speed(km/hr) vs Wind directions.From these plot we see that the highest wind directions is in WNW with the speed of 37.5 km/hr and the other wind directions are which are at close to 37km/hr are SW and WSW these are almost having the same speed of wind.From this plot we assume that wind direction are mostly in west direction with the seed of around 33-37.5km/hr speed.The fourth plot was histogram along with density curve with visualization of the distribution of average temperature values, combining the discrete representation of the histogram with the continuous estimation provided by the KDE curve.It facilitating a deeper understanding of the temperature distribution.
+
+The next started time series plot is the line chart for Max temperature vs Min temperature count between month and year period.From plot June month has the highest temperature of 24.7 degree and the least is January with it temperature of -6 degree and  between February and early November there is fluctuation of temperature up and down there is not constant temperature there is second highest point that is June with Temperature of 29.6.So the maximum temperature is in month of June-September.The minimum Temperature January and December.The next line chart is The line chart Average humidity count between month and year period.From plots January month has the highest humidity of 97.9 degree and the least is July with it temperature of 43 degree and  between February and early November there is fluctuation of temperature up and down there is not constant temperature there is second highest point that is October with Temperature of 96.6.So the maximum humidity is in month of January and October.The minimum humidity July and August.The next line chart Average Visibility count between month and year period.From plots December month has the highest Visibility of 72.9 degree and the least is December with it temperature of 3.6 degree and  between January and early November there is fluctuation of temperature up and down there is not constant Visibility there is second highest point that is July with Temperature of 68.1.So the maximum Visibility is in month of July-December.The minimum Visibility December.The because the temperature drop is more in this month.The next line plot wind speed count between month and year period. From plots that December month has the highest wind speed of 37.5 km/hr and the least is January with it temperature of 6.3 km/hr and  between January and early November there is fluctuation of temperature up and down there is not constant wind speed there is second highest point that is march and December with wind speed 37.2-37.4 km/hr.So the maximum wind speed is in month of March and December.The minimum wind speed January.The last plot line chart shows the sunlight count between month and year period. As we can see that there are Nan values present in this columns so to see the plot marked Nan values to zero to check whether there is any significance change in the plot. We can read from plots that May-August month has the highest sunlight of 15 degree and the least is December with it temperature of 0.1 degree .So the maximum sunlight falling is in month of May-August.The minimum sunlight falling speed December.
+
+By concluding this part,all the plot and the analysis done by combining both the data set there are few thing need to be discussed here.The first analysis on the Avg Temperature VS Crime Count on Both the Data set based on months.
+In this analysis of the crime rate by month indicates a variable pattern with no clear consistent trend over the months in 2023. While there are periods of increase and decrease, the data points to certain months experiencing higher crime rates.
+The next analysis on Crime Count vs Total Precipitation on Both the Data set based on months.In this analysis the month January has a crime count around 651 and Precipitation is around 8.2.where as in the month of August the total crime count 550 and Precipitation is around 1.2 like wise in the month of September total crime count is 642 and Precipitation is 0.2 and in the month of November total crime 563 and Precipitation is around 2.6.By doing this analysis we can see that when the Precipitation is between 0-8mm the crime count is more in certain months like January,August September and November.
+By Doing the next analysis with the correlation plot on both the data set we can see that it has good relationship with Avg Temperature with correlation count of 0.2 and strong relationship with Avg Precipitation with correlation count of 0.4.So the finial say about this both the data set is that when there crime around the colchester may happen due Precipitation like rain snow or heavy rainfall around the colchester.
+
+
