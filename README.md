@@ -129,11 +129,11 @@ Illustrates the proportion of different crime categories under various weather p
 Combines both weather and crime data to examine temporal alignments or anomalies.
 
 ## 📈 Major Findings
-Days with warmer temperatures and moderate humidity showed relatively higher crime frequency.
+- Days with warmer temperatures and moderate humidity showed relatively higher crime frequency.
 
-Rainy or extreme weather days tended to have fewer outdoor crime incidents.
+- Rainy or extreme weather days tended to have fewer outdoor crime incidents.
 
-Temporal patterns revealed specific days where crime spikes aligned with notable weather variations.
+- Temporal patterns revealed specific days where crime spikes aligned with notable weather variations.
 
-Visual evidence suggests that weather conditions can act as contributing factors influencing the likelihood or type of crime.
+- Visual evidence suggests that weather conditions can act as contributing factors influencing the likelihood or type of crime.
 
