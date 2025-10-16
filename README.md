@@ -73,7 +73,7 @@ Verified structure using str() and checked dimensions with dim().
 
 Explored data types, missing values, and descriptive summaries.
 
-Step 2: Data Cleaning and Preprocessing
+### Step 2: Data Cleaning and Preprocessing
 Renamed inconsistent column headers for clarity.
 
 Converted date columns into standard date formats using lubridate.
@@ -82,12 +82,12 @@ Filtered datasets to focus on January 2023.
 
 Checked for and handled missing or invalid values.
 
-Step 3: Data Integration
+### Step 3: Data Integration
 Merged the two datasets on date, linking each day’s crime frequency with its respective weather attributes.
 
 Created a unified data frame for visualization.
 
-Step 4: Exploratory Data Analysis (EDA)
+### Step 4: Exploratory Data Analysis (EDA)
 Analyzed trends in crime counts relative to:
 
 Average daily temperature
@@ -98,7 +98,7 @@ Wind speed and visibility
 
 Calculated summary statistics and correlation metrics.
 
-Step 5: Visualization and Insights
+### Step 5: Visualization and Insights
 Time Series Plots: Crime frequency over time, layered with temperature or precipitation levels.
 
 Bar Charts: Comparison of crime types under different weather conditions.
@@ -107,7 +107,7 @@ Interactive Maps (Leaflet): Geographic distribution of crimes across regions.
 
 Interactive Charts (Plotly): Dynamic visual exploration of trends.
 
-📊 Key Visualizations
+##  📊 Key Visualizations
 Temperature vs. Crime Frequency
 
 Displays the relationship between daily temperature and number of reported crimes.
@@ -128,7 +128,7 @@ Time-Series Correlation
 
 Combines both weather and crime data to examine temporal alignments or anomalies.
 
-📈 Major Findings
+## 📈 Major Findings
 Days with warmer temperatures and moderate humidity showed relatively higher crime frequency.
 
 Rainy or extreme weather days tended to have fewer outdoor crime incidents.
